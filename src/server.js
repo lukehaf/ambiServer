@@ -1,4 +1,6 @@
 import express from 'express';
+import mongoose from 'mongoose';
+// not sure what the below imports do:
 import cors from 'cors';
 import path from 'path';
 import morgan from 'morgan';
@@ -27,7 +29,8 @@ app.use(express.json()); // To parse the incoming requests with JSON payloads
 
 // additional init stuff should go before hitting the routing
 
-// default index route
+// default index route.
+// It's the entry point for our API.
 app.get('/', (req, res) => {
   res.send('hi');
 });
@@ -36,6 +39,26 @@ app.get('/', (req, res) => {
 // =============================================================================
 async function startServer() {
   try {
+    const port = process.env.PORT || 9090;
+    app.listen(port);
+
+    console.log(`Listening on port ${port}`);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+startServer();
+
+// START THE SERVER, now using mongoose, and for the kahootAPI
+// =============================================================================
+async function startServer() {
+  try {
+    // connect DB
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost/kahootAPI';
+    await mongoose.connect(mongoURI);
+    console.log(`Mongoose connected to: ${mongoURI}`);
+
     const port = process.env.PORT || 9090;
     app.listen(port);
 
