@@ -1,5 +1,6 @@
 // participant_model.js
-import mongoose, { Schema } from 'mongoose';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import mongoose, { Schema } from 'mongoose'; // If your ESLint is running from a different directory (e.g., your home folder instead of the project root), it may not detect mongoose correctly. Try running ESLint explicitly from your project root:
 
 // create a ParticipantSchema
 export const ParticipantSchema = new Schema({
