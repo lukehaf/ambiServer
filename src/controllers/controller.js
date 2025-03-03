@@ -4,7 +4,7 @@
 import Participant from '../models/participant_model';
 // so, I need CRUD by participant. Create participant, read participant, update participant, delete participant.
 
-async function createParticipant() { // get the length of the collection of documents, and append one, and return the nthParticipant/index of this document. // add a null entry for f00 to show they don't have one.
+export async function createParticipant() { // get the length of the collection of documents, and append one, and return the nthParticipant/index of this document. // add a null entry for f00 to show they don't have one.
   const participant = new Participant(); // uses the schema! Now all the mongoose methods are available for it, accessible via participant.save(), participant.find(), etc. https://mongoosejs.com/docs/queries.html
   // Now we just have to save the object (so far we’ve been working with a new instance purely in memory).
   try {
@@ -15,13 +15,36 @@ async function createParticipant() { // get the length of the collection of docu
   }
 }
 
-export default createParticipant;
+// Update a participant: Add some more columns to their row. First their row gets their nthParticipant # and Date of first contact, then it gets their Results object, then it gets their selfreport Qs.
 
-// // Update a participant: Add some more columns to their row. First their row gets their nthParticipant # and Date of first contact, then it gets their Results object, then it gets their selfreport Qs.
-// export async function updateParticipantID(id, postFields) {
-//   // await updating a post by id
-//   // return *updated* post
-// }
+// here's the function just for adding the nthParticipant's ID:
+export async function updateParticipantID({ nthParticipant, f00 }) {
+  try {
+    const updatedParticipant = await Participant.findOneAndUpdate( // search the Participant collection for a document with a matching nthParticipant.
+      { nthParticipant },
+      { $set: { studentID: f00 } }, // Updater rule: set participantID (or another field) to f00
+      { new: true }, // options.new: true: return the modified document rather than the original
+    );
+    return updatedParticipant;
+  } catch (error) {
+    throw new Error(`updateParticipantID error: ${error}`);
+  }
+}
+
+// find this nthParticipant's document and add the results object. If a results object already exists, overwrite it, since we're assuming the new results object is more recent.
+export async function updateParticipantResults({ nthParticipant, results }) {
+  try {
+    await Participant.findOneAndUpdate( // search the Participant collection for a document with a matching nthParticipant.
+      { nthParticipant },
+      { $set: { results } },
+      { new: true }, // options.new: true: return the modified document rather than the original
+    );
+    return { resultsSubmissionSuccess: true };
+  } catch (error) {
+    throw new Error(`updateParticipantResults error: ${error}`);
+  }
+}
+
 /// ////////////////////////////////////////////////////////////////
 // Read participant: I guess for the data analysis? Read out the whole array? It's not needed by the frontend, that's for sure. What happens if I create this Read functionality later?
 // // can I update my src/controllers/controller.js while render is hosting the mongoDB instance? I should be able to. Ask chatGPT later, once I have a little better language for all this.

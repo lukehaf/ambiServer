@@ -8,8 +8,9 @@ export const ParticipantSchema = new Schema({
   // Each participant will submit the following fields sequentially. That's the point of an UPDATE rather than a CREATE.
   nthParticipant: { type: Number, unique: true }, // unique true: If you try to insert a new Participant with an nthParticipant value that already exists, MongoDB will reject the insertion with a duplicate key error.
   // timestamp for first contact: Mongoose can create this automatically! I'll use it to know if a Participant document is in-progress vs abandoned.
-  Results: { type: mongoose.Schema.Types.Mixed },
-  SelfReportQs: { type: mongoose.Schema.Types.Mixed },
+  studentID: { type: String },
+  results: { type: mongoose.Schema.Types.Mixed },
+  selfReports: { type: mongoose.Schema.Types.Mixed },
 }, {
   timestamps: true, // In Mongoose, setting the timestamps option (e.g., { timestamps: true }) automatically adds two fields—createdAt and updatedAt—to your documents
   toObject: { virtuals: true }, // Both toObject and toJSON are transformation options available in Mongoose schemas. They allow you to customize how a Mongoose document is converted into a plain JavaScript object or a JSON object, respectively.
@@ -23,7 +24,7 @@ ParticipantSchema.pre('save', async function assignNthParticipant(next) { // som
       const counter = await Counter.findOneAndUpdate( // Finds a matching document in the Counter collection, updates it according to the update arg, passing any options. A Query object is returned.
         // format: A.findOneAndUpdate(conditions, update, options)
         { _id: 'participantCounter' }, // conditions to match.
-        { $inc: { seq: 1 } }, // updater rule. // $inc is a MongoDB update operator that increments a numeric field by a given value.
+        { $inc: { seq: 1 } }, // updater rule. // $inc is a MongoDB update operator that increments a numeric field by a given value. If the field doesn't exist, it's initialized to the incrementer value.
         { new: true, upsert: true }, // some options. // options.upsert: true: if no documents found, insert a new document
         //                                            // options.new: true: return the modified document rather than the original
       );

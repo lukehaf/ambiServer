@@ -5,15 +5,15 @@
 
 import { Router } from 'express';
 
-// import * as Participants from '../controllers/controller';
-// then access via Participants.createParticipant();
-import createParticipant from '../controllers/controller';
+import * as Participants from '../controllers/controller'; // These are the controllers. Access them via Participants.createParticipant();
+import Participant from '../models/participant_model'; // This is the model. You can treat it as if it's the collection itself, to find a particular document within it. Most of the time I try to keep this kind of business logic siloed away in controller.js
+// import createParticipant from '../controllers/controller';
 
 const router = Router();
 
 // handle each route. Forward its __ into "request" and return to __ the "response".
-// router CRUD verbs (used here in router): get, post, patch, delete.
-// axios CRUD verbs (in zustand store): get, post, put, delete. // With post & put you need to supply an object with key,value data. These are passed into the "request" body.
+// router CRUD verbs (used here in router): get, post, put, patch, delete. // post = create. // put = fully replace. // patch = partial replace.
+// axios CRUD verbs (in zustand store): get, post, put, patch delete. // With post, put, & patch you need to supply an object with key,value data. The keys are accessible as keys under req.body. For get & delete you can also supply an object, but IDK why. for delete the ID usually just goes in the url?
 
 // default route. It's what you'd get if you typed in the URL. Currently it's not set up for getting anything (returning any results). It hoards them like Smaug.
 router.get('/', (req, res) => {
@@ -24,48 +24,69 @@ router.get('/', (req, res) => {
 router.post('/nth/no-ID', async (req, res) => {
   try {
     // First, create the participant. It's added to the MongoDB collection, and the saved version is returned for further use here.
-    const savedParticipant = await createParticipant();
+    const savedParticipant = await Participants.createParticipant();
 
-    /// ///////////
-    const updatedParticipant = savedParticipant;
-    // // Then, update the participant's ID using the result from the first call
-    // const updatedParticipant = await Participants.updateParticipantID({
-    //   nthParticipant: savedParticipant.nthParticipant,
-    //   f00: null,
-    // });
+    // Then, update the participant's ID using the result from the first call
+    const updatedParticipant = await Participants.updateParticipantID({
+      nthParticipant: savedParticipant.nthParticipant,
+      f00: null,
+    });
 
-    // Return the updated participant document
-    return res.json(updatedParticipant);
+    // Return the updated participant document. It will become the "data" object under response.data.
+    // First though, convert the Mongoose document to a plain object. (Mongoose documents have internal properties (like $_doc$) that you usually don't want to send to the client)
+    const participantObj = updatedParticipant.toObject();
+    return res.json(participantObj);
   } catch (error) {
     return res.status(422).json({ error: error.message });
   }
 });
 
-// // create a participant, for participants who have a Dartmouth ID. return the participant that was created, for its nthParticipant key for the frontend.
-// /// //////////////////////////////////////////
-// // - - version 2: create a Participant, in the case where they submit a Dartmouth ID. (check that it's a valid format, and that it doesn't already exist.) Return them their nthParticipant # & a "proceed" message, or "invalid format", or "f00 already taken."
-// router.post('/nth/no-ID', async (req, res) => {
-//   try {
-//     // First, create the participant. It's added to the MongoDB collection, and the saved version is returned for further use here.
-//     const savedParticipant = await Participants.createParticipant();
+// create a participant, for participants who have a Dartmouth ID. return the participant that was created, for its nthParticipant key for the frontend. Also return serverSays: invalid, taken, or proceed.
+router.post('/nth/with-ID', async (req, res) => {
+  // Ensure that req.body.studentID is a valid format. If not, return early.
+  const { studentID } = req.body;
+  if (!/^f00[a-zA-Z0-9]{4}$/.test(studentID)) {
+    return res.json({ serverSays: 'invalid' });
+  }
 
-//     // Then, update the participant's ID using the result from the first call
-//     const updatedParticipant = await Participants.updateParticipantID({
-//       nthParticipant: savedParticipant.nthParticipant,
-//       f00: req.body.f00, // make sure to pass the f00 as a key of the object. EG: // With POST and PUT you need to supply an object with key,value data. Something like the following would work: const fields = {title: 'test', content:'blah blah', coverUrl: 'http://someimage.gif', tags: 'testing123'}; const result = await axios.post(`${ROOT_URL}/posts${API_KEY}`, fields);
-//     });
+  try {
+    // Ensure this studentID hasn't already been submitted.
+    const duplicate = await Participant.findOne({ studentID });
+    if (duplicate) {
+      return res.json({ serverSays: 'taken' });
+    }
 
-//     // Return the updated participant document
-//     return res.json(updatedParticipant);
-//   } catch (error) {
-//     return res.status(422).json({ error: error.message });
-//   }
-// });
+    // First, create the participant. It's added to the MongoDB collection, and the saved version is returned for further use here.
+    const savedParticipant = await Participants.createParticipant();
 
-// router.patch('/participants/:id', async (req, res) => { // :id indicates pattern matching, allowing this router.patch to handle multiple routes. EG, GET /participants/42
-//   const participantId = req.params.id;
-//   const { roomKey, status } = req.body; // note how the ID from the url is under params, rather than body.
-// });
-// NEXT I WANT TO SEE WHERE THE GET /participant/24 would be typed. Does that go in my zustand somewhere?
+    // Then, update the participant's ID using the result from the first call
+    const updatedParticipant = await Participants.updateParticipantID({
+      nthParticipant: savedParticipant.nthParticipant,
+      f00: req.body.studentID,
+    });
+
+    // Convert the Mongoose document to a plain object. (Mongoose documents have internal properties (like $_doc$) that you usually don't want to send to the client)
+    const participantObj = updatedParticipant.toObject();
+
+    // Return the updated participant document with an extra key
+    return res.json({ ...participantObj, serverSays: 'proceed' });
+  } catch (error) {
+    return res.status(422).json({ error: error.message });
+  }
+});
+
+// find this nthParticipant's document and add the results object. If a results object already exists, overwrite it, since we're assuming the new results object is more recent.
+router.patch('/results', async (req, res) => {
+  const { nthParticipant, results } = req.body;
+  try {
+    const success = await Participants.updateParticipantResults({
+      nthParticipant,
+      results,
+    });
+    return res.json(success);
+  } catch (error) {
+    return res.status(422).json({ error: error.message });
+  }
+});
 
 export default router;
