@@ -41,7 +41,7 @@ app.use('/api', apiRoutes);
 async function startServer() {
   try {
     // connect DB
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost/ambidextrousAPI'; // lets you connect to mongoDB in two different environments. The first is provided by mongoDB Atlas & is copy/pasted into Render, which Render then provides. The second is for using your local mongoDB daemon, while testing. I guess this line of code provides the name?
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost/ambi'; // lets you connect to mongoDB in two different environments. The first is provided by mongoDB Atlas & is copy/pasted into Render, which Render then provides. The second is for using your local mongoDB daemon, while testing. I guess this line of code provides the name?
     await mongoose.connect(mongoURI);
     console.log(`Mongoose connected to: ${mongoURI}`);
 

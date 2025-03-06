@@ -45,6 +45,20 @@ export async function updateParticipantResults({ nthParticipant, results }) {
   }
 }
 
+// find this nthParticipant's document and add the survey object. If a results object already exists, overwrite it, since we're assuming the new results object is more recent.
+export async function updateParticipantSurvey({ nthParticipant, survey }) {
+  try {
+    await Participant.findOneAndUpdate( // search the Participant collection for a document with a matching nthParticipant.
+      { nthParticipant },
+      { $set: { survey } },
+      { new: true }, // options.new: true: return the modified document rather than the original
+    );
+    return { surveyReceived: true };
+  } catch (error) {
+    throw new Error(`updateParticipantResults error: ${error}`);
+  }
+}
+
 /// ////////////////////////////////////////////////////////////////
 // Read participant: I guess for the data analysis? Read out the whole array? It's not needed by the frontend, that's for sure. What happens if I create this Read functionality later?
 // // can I update my src/controllers/controller.js while render is hosting the mongoDB instance? I should be able to. Ask chatGPT later, once I have a little better language for all this.

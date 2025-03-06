@@ -89,4 +89,17 @@ router.patch('/results', async (req, res) => {
   }
 });
 
+// find this nthParticipant's document and add the survey object. If a results object already exists, overwrite it, since we're assuming the new results object is more recent.
+router.patch('/survey', async (req, res) => {
+  const { nthParticipant, survey } = req.body;
+  try {
+    const success = await Participants.updateParticipantSurvey({
+      nthParticipant,
+      survey,
+    });
+    return res.json(success);
+  } catch (error) {
+    return res.status(422).json({ error: error.message });
+  }
+});
 export default router;

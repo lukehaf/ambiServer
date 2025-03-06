@@ -10,7 +10,7 @@ export const ParticipantSchema = new Schema({
   // timestamp for first contact: Mongoose can create this automatically! I'll use it to know if a Participant document is in-progress vs abandoned.
   studentID: { type: String },
   results: { type: mongoose.Schema.Types.Mixed },
-  selfReports: { type: mongoose.Schema.Types.Mixed },
+  survey: { type: mongoose.Schema.Types.Mixed },
 }, {
   timestamps: true, // In Mongoose, setting the timestamps option (e.g., { timestamps: true }) automatically adds two fields—createdAt and updatedAt—to your documents
   toObject: { virtuals: true }, // Both toObject and toJSON are transformation options available in Mongoose schemas. They allow you to customize how a Mongoose document is converted into a plain JavaScript object or a JSON object, respectively.
